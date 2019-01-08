@@ -21,22 +21,22 @@ class suggested implements Interfaces\Api
         $type = '';
         switch ($pages[0]) {
             case 'activities':
-                $type = 'newsfeed';
+                $type = 'activity';
                 break;
             case 'channels':
                 $type = 'user';
                 break;
             case 'images':
-                $type = 'image';
+                $type = 'object:image';
                 break;
             case 'videos':
-                $type = 'video';
+                $type = 'object:video';
                 break;
             case 'groups':
                 $type = 'group';
                 break;
             case 'blogs':
-                $type = 'blog';
+                $type = 'object:blog';
                 break;
         }
 
@@ -69,7 +69,7 @@ class suggested implements Interfaces\Api
         }
 
         /** @var Core\Feeds\Suggested\Manager $repo */
-        $repo = Di::_()->get('Feeds\Suggested\Manager');
+        $repo = Di::_()->get('Feeds\Top\Manager');
 
         $opts = [
             'user_guid' => Core\Session::getLoggedInUserGuid(),
@@ -78,13 +78,19 @@ class suggested implements Interfaces\Api
             'offset' => $offset,
             'type' => $type,
             'all' => $all,
+            'algorithm' => $_GET['algorithm'] ?? 'best',
+            'period' => $_GET['period'] ?? '12h',
         ];
 
         if ($hashtag) {
             $opts['hashtag'] = $hashtag;
         }
 
-        $result = $repo->getFeed($opts);
+        if (isset($_GET['hashtags']) && !$all) {
+            $opts['hashtags'] = explode(',', $_GET['hashtags']);
+        }
+
+        $result = $repo->getList($opts);
 
         // Remove all unlisted content if it appears
         $result = array_values(array_filter($result, function($entity) {
